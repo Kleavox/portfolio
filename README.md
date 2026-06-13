@@ -36,7 +36,7 @@ Variables:
 ```text
 APP_ROOT_DOMAIN
 WORKER_PREFIX        (same value as the Kleavox monorepo deploy)
-CONTACT_EMAIL        (e.g. portfolio@inbound.<root-domain>)
+CONTACT_EMAIL        (your personal inbox — contact-form messages land here)
 FROM_EMAIL           (e.g. Portfolio <no-reply@<root-domain>>)
 ```
 
@@ -51,6 +51,13 @@ TURNSTILE_SECRET_KEY
 ```
 
 Run the `Deploy Portfolio` workflow with `domains=none` first, then
-`domains=canonical` once verified. Resend inbound (`inbound.<root-domain>` MX)
-and Turnstile hostname authorization for `port.<root-domain>` are managed as
-described in the Kleavox monorepo README.
+`domains=canonical` once verified.
+
+## Contact form
+
+The contact form posts to `/api/contact`; the worker relays each message
+through Resend **outbound** straight to `CONTACT_EMAIL` (your personal inbox),
+with the visitor's address set as `reply_to` so you can just hit reply. There
+is no inbound mailbox to monitor — no MX records or Resend "Receiving" domain
+are needed. The only Resend setup is verifying the sending domain used by
+`FROM_EMAIL`, plus Turnstile hostname authorization for `port.<root-domain>`.
