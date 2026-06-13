@@ -1,35 +1,55 @@
-# .github/workflows/deploy.yml
-
-name: Deploy
+name: Deploy Portfolio
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      domains:
+        description: Domain attachment stage
+        required: true
+        type: choice
+        default: none
+        options:
+          - none
+          - canonical
+
+concurrency:
+  group: deploy-portfolio
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      APP_ROOT_DOMAIN: ${{ vars.APP_ROOT_DOMAIN }}
+      WORKER_PREFIX: ${{ vars.WORKER_PREFIX }}
+      CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+      FROM_EMAIL: ${{ vars.FROM_EMAIL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+      PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
+      PUBLIC_ROOT_ORIGIN: https://${{ vars.APP_ROOT_DOMAIN }}
+      PUBLIC_PORTFOLIO_ORIGIN: https://port.${{ vars.APP_ROOT_DOMAIN }}
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: 22
+          cache: pnpm
 
-      - name: Install dependencies
-        run: npm ci
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @portfolio/app build
+      - run: node scripts/render-deploy.mjs --domains=${{ inputs.domains }}
 
-      - name: Build
-        run: npm run build
-        env:
-          PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.PUBLIC_TURNSTILE_SITE_KEY }}
-
-      - name: Deploy to Cloudflare Workers
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Deploy worker
+        run: pnpm --filter @portfolio/worker exec wrangler deploy --strict --config ../.wrangler-deploy/portfolio.json --secrets-file ../.wrangler-deploy/portfolio.secrets.json

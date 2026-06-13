@@ -1,36 +1,16 @@
 {
-  "name": "deauport",
-  "type": "module",
-  "version": "1.0.1",
+  "name": "portfolio",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro",
-    "workers": "npm run build && wrangler dev",
-    "generate-types": "wrangler types"
-  },
-  "dependencies": {
-    "@astrojs/cloudflare": "^13.5.1",
-    "@astrojs/react": "^5.0.5",
-    "@fontsource-variable/inter": "^5.2.8",
-    "@fontsource-variable/jetbrains-mono": "^5.2.8",
-    "@marsidev/react-turnstile": "^1.5.2",
-    "@tailwindcss/vite": "^4.3.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "astro": "^6.3.3",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "resend": "^6.12.3",
-    "tailwindcss": "^4.3.0",
-    "wrangler": "^4.92.0",
-    "zod": "^4.4.3"
-  },
-  "overrides": {
-    "vite": "^7"
+    "build": "pnpm --filter @portfolio/app build && pnpm --filter @portfolio/worker build",
+    "dev": "pnpm --filter @portfolio/worker dev",
+    "lint": "pnpm --filter @portfolio/app lint && pnpm --filter @portfolio/worker lint",
+    "typecheck": "pnpm --filter @portfolio/app typecheck && pnpm --filter @portfolio/worker typecheck",
+    "deploy:render": "node scripts/render-deploy.mjs"
   }
 }
